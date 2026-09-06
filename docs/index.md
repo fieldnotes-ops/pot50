@@ -8,7 +8,7 @@ title: Fieldnotes Ops
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fieldnotes Ops. Practical playbooks for revenue operations</title>
 <meta name="description" content="Practical, research-backed playbooks for RevOps, sales ops and GTM teams. Clear rules, editable templates and implementation notes you can put to work this week.">
-<link rel="canonical" href="https://fieldnotes-ops.github.io/pot50/">
+<link rel="canonical" href="https://fieldnotesops.com/">
 <link rel="stylesheet" href="assets/playbook.css">
 <style>
 body{font-size:16px}
@@ -68,11 +68,11 @@ footer.site .container{display:flex;justify-content:space-between;gap:24px;flex-
 </head>
 <body>
 <header class="site-header"><div class="container header-inner">
-  <a class="wordmark" href="https://fieldnotes-ops.github.io/pot50/"><span class="mark">f.</span>Fieldnotes Ops</a>
+  <a class="wordmark" href="https://fieldnotesops.com/"><span class="mark">f.</span>Fieldnotes Ops</a>
   <nav class="header-nav" aria-label="Site">
     <a href="#playbook">The playbook</a>
     <a href="#inside">What's inside</a>
-    <a class="nav-action" href="https://fieldnotes-ops.github.io/pot50/products/lead-routing-sla-playbook/">View the playbook</a>
+    <a class="nav-action" href="https://fieldnotesops.com/products/lead-routing-sla-playbook/">View the playbook</a>
   </nav>
 </div></header>
 
@@ -94,7 +94,7 @@ footer.site .container{display:flex;justify-content:space-between;gap:24px;flex-
     </ul>
     <p class="price"><b>€19</b><span>one-time payment, instant access</span></p>
     <a class="btn" href="https://buy.stripe.com/4gM6oJ0mN6RP3aOasQ9AA00">Get the playbook</a>
-    <p class="fine">Web guide, about 5,000 words, plus two editable CSVs. Payment via Stripe. <a href="https://fieldnotes-ops.github.io/pot50/products/lead-routing-sla-playbook/">Read the full details</a>.</p>
+    <p class="fine">Web guide, about 5,000 words, plus two editable CSVs. Payment via Stripe. <a href="https://fieldnotesops.com/products/lead-routing-sla-playbook/">Read the full details</a>.</p>
   </div>
 </div>
 
@@ -124,7 +124,7 @@ footer.site .container{display:flex;justify-content:space-between;gap:24px;flex-
 <section class="band faq"><div class="container">
   <h2>Before you buy</h2>
   <p class="intro">A few useful answers.</p>
-  <details><summary>What exactly do I receive?</summary><p>A web guide of about 5,000 words plus two editable CSVs: a routing matrix and a weekly metrics tracker. Read it in your browser or print it to PDF. The full contents are listed on the <a href="https://fieldnotes-ops.github.io/pot50/products/lead-routing-sla-playbook/">playbook page</a>.</p></details>
+  <details><summary>What exactly do I receive?</summary><p>A web guide of about 5,000 words plus two editable CSVs: a routing matrix and a weekly metrics tracker. Read it in your browser or print it to PDF. The full contents are listed on the <a href="https://fieldnotesops.com/products/lead-routing-sla-playbook/">playbook page</a>.</p></details>
   <details><summary>Will this configure my CRM for me?</summary><p>No. It's a document and templates, not an installed integration. It gives you the operating rules, examples and build notes; you implement and test them in your own systems.</p></details>
   <details><summary>Is it a fit for my team?</summary><p>It's written for the RevOps or sales ops person responsible for inbound routing, using HubSpot, Salesforce or a comparable CRM plus Slack. If you already run reliable SLA automation and a weekly breach review, you probably don't need it.</p></details>
   <details><summary>How do I get access after paying?</summary><p>Stripe sends you straight to the playbook page after payment. Bookmark it or save a PDF. There's no account and no login.</p></details>

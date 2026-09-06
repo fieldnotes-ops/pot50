@@ -21,7 +21,7 @@ title: Lead Routing & SLA Playbook
 </head>
 <body>
 <header class="site-header"><div class="header-inner">
-  <a class="wordmark" href="https://fieldnotes-ops.github.io/pot50/"><span class="mark">f.</span>Fieldnotes Ops</a>
+  <a class="wordmark" href="https://fieldnotesops.com/"><span class="mark">f.</span>Fieldnotes Ops</a>
   <nav class="header-nav" aria-label="Site"><a href="https://buy.stripe.com/4gM6oJ0mN6RP3aOasQ9AA00">Get the playbook, €19</a></nav>
 </div></header>
 <div class="wrap"><main>

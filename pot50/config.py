@@ -19,5 +19,5 @@ STRIPE_FIXED_FEE_EUR = 0.25
 MAX_PRODUCTS_PER_WEEK = 1
 MAX_ARTICLES_PER_DAY = 1
 
-SITE_BASE = "https://fieldnotes-ops.github.io/pot50"  # change if the GitHub handle differs
+SITE_BASE = "https://fieldnotesops.com"
 BRAND = "Fieldnotes Ops"          # public brand; the operator's name never appears
