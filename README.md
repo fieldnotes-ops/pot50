@@ -1,22 +1,9 @@
 # pot50
 
-Autonomous revenue agent seeded with EUR 50.
+Fully autonomous revenue agent seeded with EUR 50. No human in the loop after setup.
 
-Rules enforced in code (see `pot50/config.py`):
+Enforced in code (`pot50/config.py`): spend cap = 50 + 0.5 x net revenue; kill at < EUR 5 capacity or 30 days without revenue; max 1 product per week, 1 article per day.
 
-- Spend cap = 50 + 0.5 x cumulative net revenue
-- Kill if remaining spend capacity < EUR 5, or 30 days without revenue
-- Any publish, new account, or spend over EUR 5 needs a human `approve` comment on a GitHub Issue
+How it works: the agent writes product and delivery pages into `docs/` (served by GitHub Pages), creates Stripe products and payment links, publishes dev.to articles for traffic, and reconciles Stripe payments into `ledger.json`. `memory.md` is its memory, `decisions.log` the audit trail, `state.json` the live product list.
 
-## Operating it
-
-- Runs at 07:00 and 19:00 UTC via GitHub Actions. Trigger manually from the Actions tab; set `dry_run` to `true` for a smoke test.
-- Approvals arrive as Issues labelled `approval:*`. Comment `approve` or `reject`. The next run picks it up.
-- `ledger.json` is the money source of truth. Only the code writes it.
-- `memory.md` is the agent's memory. `decisions.log` is the audit trail.
-- To publish: the agent puts product files and listing copy in `products/`; you create the product on Gumroad from those files. Sales reconcile automatically.
-- To spend money the agent needs your approval and you make the payment; then add a ledger entry by committing to `ledger.json` (a `spend` entry) so the cap stays honest.
-
-## Secrets (repo Settings > Secrets > Actions)
-
-`ANTHROPIC_API_KEY`, `GUMROAD_ACCESS_TOKEN`. Card secrets are stored for future use and are not read by v1; the agent cannot pay for anything on its own.
+Secrets: `ANTHROPIC_API_KEY`, `STRIPE_SECRET_KEY` (restricted key: Products, Prices, Payment Links write; Charges read), `DEVTO_API_KEY` (optional).
