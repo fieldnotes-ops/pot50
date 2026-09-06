@@ -1,0 +1,9 @@
+Region,Company Size,Product Line,Channel,Owner Queue,SLA (min),Escalation
+NA,1-50,Core,Inbound form,SMB-AE-Pool,15,Team lead -> Slack #sla-breach
+NA,51-500,Core,Inbound form,MM-AE-Round-Robin,10,Manager email + Slack
+NA,500+,Any,Any,Named-Account-Owner,5,Direct page to owner + manager
+EMEA,1-50,Core,Inbound form,EMEA-SMB-Pool,30,Slack #sla-breach
+EMEA,51-500,Core,Inbound form,EMEA-MM-Pool,15,Manager email + Slack
+Any,Any,Add-on,In-product upsell,CS-Pool,60,CS manager digest
+Any,Any,Any,Partner referral,Partner-Desk,30,Partner manager Slack
+Any,Any,Any,Unmatched (catch-all),Triage-Queue,20,Ops on-call Slack
