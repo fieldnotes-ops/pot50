@@ -1,2 +1,7 @@
 # pot50 decision log
 2026-09-06T18:24:18+00:00 dry run ok: {'seed': 50.0, 'cumulative_net_revenue': 0, 'cumulative_spend': 0, 'spend_cap': 50.0, 'remaining_spend_capacity': 50.0, 'days_since_last_revenue': 0, 'return_multiple': 0.0, 'status': 'active'}
+2026-09-06T18:26:56+00:00 wrote products/lead_routing_sla_playbook.md
+2026-09-06T18:26:56+00:00 wrote products/routing_matrix_template.csv
+2026-09-06T18:27:11+00:00 approval requested #1 [publish] Publish "Lead Routing & SLA Playbook" on Gumroad, $19
+2026-09-06T18:27:12+00:00 finish: Built first product (Lead Routing & SLA Playbook, $19) and opened publish approval request #1. No revenue yet. Memory updated with pipeline and next steps.
+2026-09-06T18:27:12+00:00 run cost 0.1025 EUR; {'seed': 50.0, 'cumulative_net_revenue': 0, 'cumulative_spend': 0.1, 'spend_cap': 50.0, 'remaining_spend_capacity': 49.9, 'days_since_last_revenue': 0, 'return_multiple': 0.0, 'status': 'active'}

@@ -1,0 +1,8 @@
+Tier,Territory/Segment,Product Line,Primary Routing Method,Tie-Breaker,Owner/Queue,First-Touch SLA,Escalation Trigger,Escalation Owner
+Tier 1 - Hot,EMEA,Core Platform,Round Robin,Named Account Override,SDR Team A,5 min,No touch in 10 min,Manager A
+Tier 1 - Hot,AMER,Core Platform,Round Robin,Named Account Override,SDR Team B,5 min,No touch in 10 min,Manager B
+Tier 2 - Warm,EMEA,Core Platform,Territory,Capacity Cap,SDR Team A,1 hour,No touch in 4 hours,Manager A
+Tier 2 - Warm,AMER,Add-on Product,Product-Line,Capacity Cap,SDR Team C,1 hour,No touch in 4 hours,Manager C
+Tier 3 - Cold,Global,All,Round Robin,Timezone Match,SDR Pool,24 hours,No touch in 48 hours,RevOps
+,,,,,,,,
+Instructions:,Fill one row per distinct routing rule. Keep tiers to 3 max. Review and retune monthly.,,,,,,,
