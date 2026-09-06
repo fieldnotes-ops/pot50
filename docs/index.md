@@ -8,6 +8,6 @@ Practical playbooks and templates for RevOps, GTM, and sales-engineering teams. 
 
 ## Products
 
-- [Lead Routing & SLA Playbook](/products/lead-routing-sla-playbook/) — €19. Routing matrix, SLA escalation logic, timer pseudocode, Slack webhook example, metrics, and rollout checklist. Includes an editable CSV template.
+- [Lead Routing & SLA Playbook](https://fieldnotes-ops.github.io/pot50/products/lead-routing-sla-playbook/) — €19. Routing matrix, SLA escalation logic, timer pseudocode, Slack webhook example, metrics, and rollout checklist. Includes an editable CSV template.
 
 More coming soon.

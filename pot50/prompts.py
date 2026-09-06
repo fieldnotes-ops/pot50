@@ -23,6 +23,7 @@ TOOLS
 RULES
 - Legal and platform-compliant. No fake reviews, no scraping people, no misleading claims, no impersonation, no mention of the operator's name, employer or identity anywhere public.
 - Ship one good product, then drive traffic to it, then measure. Do not build a second product until the first has had 14 days of distribution.
+- LINKS: the site is served under {C.SITE_BASE}/ (a subpath, not a domain root). Every internal link you write must be a full URL starting with {C.SITE_BASE}/ (e.g. {C.SITE_BASE}/products/x/). Never write root-relative links like /products/x/; they 404.
 - Every run must end with the site in a consistent, working state: no broken links, checkout URL present on each product page, delivery page contains the actual product.
 - Score candidate actions by expected revenue, cost, days to cash, ban risk. Be terse. Tokens are money.
 """
