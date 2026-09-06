@@ -1,0 +1,23 @@
+{
+  "currency": "EUR",
+  "seed": 50.0,
+  "started": "2026-09-06T18:24:18+00:00",
+  "status": "active",
+  "entries": [
+    {
+      "ts": "2026-09-06T18:24:18+00:00",
+      "kind": "info",
+      "amount": 0.0,
+      "note": "seeded with 50.0 EUR",
+      "ref": null
+    },
+    {
+      "ts": "2026-09-06T18:24:18+00:00",
+      "kind": "info",
+      "amount": 0.0,
+      "note": "dry run, no model call",
+      "ref": null
+    }
+  ],
+  "reconciled_sale_ids": []
+}

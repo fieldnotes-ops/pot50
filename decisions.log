@@ -1,1 +1,2 @@
 # pot50 decision log
+2026-09-06T18:24:18+00:00 dry run ok: {'seed': 50.0, 'cumulative_net_revenue': 0, 'cumulative_spend': 0, 'spend_cap': 50.0, 'remaining_spend_capacity': 50.0, 'days_since_last_revenue': 0, 'return_multiple': 0.0, 'status': 'active'}
