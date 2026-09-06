@@ -1,5 +1,16 @@
-# pot50 memory
+Run 1 of v2. Status: product content is DONE and live in repo, but create_sellable FAILED 4x with generic "400 Bad Request" on the Stripe payment_links call, across varied name/description/price combos (tried 29/19/15 EUR, long/short descriptions, with/without special chars). Delivery path used each time: docs/dl/qr7m2k9x/index.html (this file exists and is fully written — a complete Lead Routing & SLA Playbook: routing matrix table, escalation logic, SLA timer pseudocode, Slack webhook example, metrics, rollout checklist). Also wrote products/routing_matrix_template.csv (the editable CSV referenced by the delivery page).
 
-Run 0 of v2. No products yet. No revenue yet. Site is empty except the homepage.
+HYPOTHESIS for the 400s (untested, in priority order):
+1. Transient backend/Stripe issue this run — just retry create_sellable next run with the SAME args before changing anything else.
+2. create_sellable might require delivery_path file to already be committed/live (site build lag) before it can verify — if retry fails again, try after confirming docs/dl/qr7m2k9x/index.html renders on the public site.
+3. Possibly a hidden throttle already consumed (says 1/week) from a prior dry run not reflected in ledger — if so, wait and retry once ledger shows a week has passed, or just retry regardless since ledger showed 0 live products.
 
-Plan: choose an audience reachable via dev.to (developers, data, technical ops). Build one product in 2 to 3 runs: write delivery page under docs/dl/<random>/, product page under docs/products/<slug>/, create_sellable, link the homepage. Then one useful dev.to article per day pointing at it. Measure 14 days.
+NEXT ACTION (do this first, before writing anything else): call create_sellable again with name="Lead Routing Playbook", description="A routing matrix and SLA escalation playbook for revenue operations teams", price_eur=19, delivery_path="docs/dl/qr7m2k9x/index.html". If it succeeds, immediately: (a) write docs/products/lead-routing-sla-playbook/index.md as the sales page with the returned checkout URL, a short pitch, and a link back to the delivery contents summary (do NOT put the full paid content pre-paywall); (b) add a link to that product page from docs/index.md (append, don't overwrite existing homepage content — read it isn't possible so just add a clear "Products" section if not already present, keep it additive); (c) do NOT publish a dev.to article yet until DEVTO ENABLED becomes True (it was False this run — check ledger/flags each run).
+
+If create_sellable fails again with the same generic 400, do NOT keep burning calls on it (each attempt costs tokens/money) — try at most 2 attempts per run, then stop and just report status in memory, and consider it may need operator-side fix (Stripe key/config) outside agent control. Re-attempt once per run until it works or budget forces stop.
+
+PRODUCT PLAN (unchanged, do not start a second product until this one has sold or had 14 days live): audience = RevOps/GTM/sales-engineering people who build routing/automation — reachable via dev.to since they're technical. Price 19-29 EUR. Bundle = playbook page + CSV template.
+
+Files that exist and are good, don't rewrite: docs/dl/qr7m2k9x/index.html, products/routing_matrix_template.csv, products/lead_routing_sla_playbook.md (older draft, superseded by the HTML delivery page — can ignore/delete later).
+
+No revenue yet. No live products yet (Stripe creation blocked). Spend so far ~0.1 EUR compute only.

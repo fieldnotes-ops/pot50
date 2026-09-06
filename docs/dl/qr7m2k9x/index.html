@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lead Routing SLA Playbook — Delivery</title>
+<meta name="robots" content="noindex">
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:820px;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#1a1a1a}
+h1,h2{color:#0a3d62}
+code,pre{background:#f4f4f4;padding:2px 6px;border-radius:4px}
+pre{padding:12px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:0.92rem}
+th{background:#eef3f8}
+.tag{background:#0a3d62;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem}
+</style>
+</head>
+<body>
+<p><span class="tag">Thank you for your purchase</span></p>
+<h1>Lead Routing &amp; SLA Playbook</h1>
+<p>This is your full copy. Save this page (Ctrl/Cmd+P → PDF) or copy the sections you need into your CRM/automation tool.</p>
+
+<h2>1. Why routing breaks</h2>
+<p>Most B2B teams lose leads not because volume is high, but because ownership is ambiguous the moment a lead arrives. The fix isn't a smarter CRM — it's an explicit routing matrix plus a hard SLA clock that something (not someone) enforces.</p>
+
+<h2>2. The Routing Matrix</h2>
+<p>Route on the smallest set of fields that actually predicts who should own the lead. In most B2B orgs that's: region, company size band, product line, and inbound channel. Anything more granular decays fast as your org changes.</p>
+<table>
+<tr><th>Region</th><th>Company Size</th><th>Product Line</th><th>Channel</th><th>Owner Queue</th><th>SLA (min)</th><th>Escalation</th></tr>
+<tr><td>NA</td><td>1-50</td><td>Core</td><td>Inbound form</td><td>SMB-AE-Pool</td><td>15</td><td>Team lead → Slack #sla-breach</td></tr>
+<tr><td>NA</td><td>51-500</td><td>Core</td><td>Inbound form</td><td>MM-AE-Round-Robin</td><td>10</td><td>Manager email + Slack</td></tr>
+<tr><td>NA</td><td>500+</td><td>Any</td><td>Any</td><td>Named-Account-Owner</td><td>5</td><td>Direct page to owner + manager</td></tr>
+<tr><td>EMEA</td><td>1-50</td><td>Core</td><td>Inbound form</td><td>EMEA-SMB-Pool</td><td>30</td><td>Slack #sla-breach</td></tr>
+<tr><td>EMEA</td><td>51-500</td><td>Core</td><td>Inbound form</td><td>EMEA-MM-Pool</td><td>15</td><td>Manager email + Slack</td></tr>
+<tr><td>Any</td><td>Any</td><td>Add-on</td><td>In-product upsell</td><td>CS-Pool</td><td>60</td><td>CS manager digest</td></tr>
+<tr><td>Any</td><td>Any</td><td>Any</td><td>Partner referral</td><td>Partner-Desk</td><td>30</td><td>Partner manager Slack</td></tr>
+</table>
+<p>Download the editable version: <a href="../../../products/routing_matrix_template.csv">routing_matrix_template.csv</a> — duplicate the sheet, delete rows that don't apply, add your own queues.</p>
+
+<h2>3. SLA clock logic (pseudocode, works for HubSpot/Salesforce/Zapier/n8n)</h2>
+<pre>
+on lead.created:
+  match = lookup_matrix(lead.region, lead.company_size, lead.product_line, lead.channel)
+  assign(lead, match.owner_queue)
+  start_timer(lead.id, duration = match.sla_minutes)
+
+on timer.expired AND lead.status == "unworked":
+  notify(match.escalation_target)
+  reassign_if_no_response(after = match.sla_minutes * 2, target = "manager_pool")
+
+on lead.status == "worked":
+  cancel_timer(lead.id)
+  log_time_to_first_touch(lead.id)
+</pre>
+
+<h2>4. Slack escalation webhook (copy-paste)</h2>
+<pre>
+POST https://hooks.slack.com/services/XXX/YYY/ZZZ
+{
+  "text": "SLA BREACH: Lead #{{lead.id}} ({{lead.company}}) unworked for {{minutes_over}} min past {{sla_minutes}} min SLA. Owner: {{owner_queue}}. Escalating to {{escalation_target}}."
+}
+</pre>
+
+<h2>5. Metrics to track weekly</h2>
+<ul>
+<li><b>Time to first touch (TTFT)</b> — median and p90, per queue. This is the number that correlates with conversion, not volume.</li>
+<li><b>SLA breach rate</b> — % of leads where timer expired before first touch. Target &lt;5%.</li>
+<li><b>Reassignment rate</b> — high values mean your matrix has the wrong owner mapped somewhere; fix the matrix, not the people.</li>
+<li><b>Coverage gaps</b> — leads that matched no row in the matrix. Should be 0; if not, add a catch-all row routing to a triage queue.</li>
+</ul>
+
+<h2>6. Rollout checklist</h2>
+<ol>
+<li>Export last 90 days of leads, tag each with region/size/product/channel.</li>
+<li>Build the matrix from actual distribution, not assumptions — start with the 6-10 rows that cover 90% of volume, add a catch-all.</li>
+<li>Implement the timer in whatever you already have (native CRM workflow, Zapier delay+branch, or a small n8n flow) — don't wait for a "real" system.</li>
+<li>Turn on Slack escalation before you turn on reassignment — you want visibility before you automate consequences.</li>
+<li>Review breach rate weekly for 4 weeks, then monthly.</li>
+</ol>
+
+<h2>7. Common failure modes</h2>
+<ul>
+<li><b>Matrix too granular</b> → routes break every reorg. Keep it to 4 dimensions max.</li>
+<li><b>SLA timer with no escalation target</b> → breaches pile up silently. Always name a person or pool, never "the team."</li>
+<li><b>No catch-all row</b> → leads that don't match anything vanish into an unassigned queue forever.</li>
+<li><b>Reassignment with no cooldown</b> → leads ping-pong between reps. Add a minimum hold time before re-routing.</li>
+</ul>
+
+<hr>
+<p style="font-size:0.85rem;color:#666">Fieldnotes Ops — practical playbooks for people who build the systems, not just use them. Questions or bugs in this file: reply to the receipt email from Stripe.</p>
+</body>
+</html>
