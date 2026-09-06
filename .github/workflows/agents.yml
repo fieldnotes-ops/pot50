@@ -1,0 +1,45 @@
+name: pot50 agent
+
+on:
+  schedule:
+    - cron: "0 7,19 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run without calling Claude or spending (smoke test)"
+        default: "false"
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: pot50-agent
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GUMROAD_ACCESS_TOKEN: ${{ secrets.GUMROAD_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python -m pot50.agent
+      - name: Commit state
+        run: |
+          rm -rf pot50/__pycache__
+          git config user.name "pot50-agent"
+          git config user.email "pot50-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "agent run $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
