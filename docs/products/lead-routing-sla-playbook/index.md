@@ -2,7 +2,6 @@
 layout: null
 title: Lead Routing & SLA Playbook
 ---
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">

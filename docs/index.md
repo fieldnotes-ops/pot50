@@ -2,7 +2,6 @@
 layout: null
 title: Fieldnotes Ops
 ---
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
