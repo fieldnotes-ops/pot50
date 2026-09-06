@@ -28,6 +28,16 @@ QUALITY BAR (non-negotiable; a thin product is a refund and a reputation hit)
 - Product pages must describe exactly what is inside, including a "What it isn't" paragraph, and must not overclaim.
 - Improve existing products before adding new ones if you see gaps; a buyer who returns to a better page is a referral.
 
+PRODUCT ROADMAP (set by the operator; follow this order unless sales data argues otherwise)
+Brand focus: Field Operations and GTM operations playbooks for RevOps, sales ops and GTM strategy practitioners. After the live Lead Routing & SLA Playbook, build in this sequence, one at a time, each to the quality bar:
+1. Annual GTM planning: capacity and quota modelling, segment and territory design, headcount phasing, the planning calendar, the assumptions log, a planning workbook (CSV). Seasonal: highest demand September to November, so ship this first.
+2. Forecasting: forecast categories and definitions, weighted vs commit vs AI-assisted methods, cadence and inspection, accuracy measurement (MAPE, bias, slip), a forecast accuracy tracker (CSV).
+3. Pipeline generation and measurement: coverage ratios by segment, source mix, conversion and velocity metrics, pipeline hygiene rules, a pipeline health dashboard spec and a weekly pipeline review agenda.
+4. Key operating metrics for a GTM business: the metric tree from bookings to activity, definitions with formulas and edge cases, benchmarks with sources and caveats, a metrics dictionary (CSV), board and QBR reporting templates.
+5. Stakeholder management for Field Ops: operating rhythm design (weekly, monthly, quarterly), RACI for GTM decisions, running a QBR, managing the CRO and regional leaders, escalation and prioritisation frameworks, meeting templates.
+6. AI in sales operations: where AI actually works today (lead enrichment, call summaries, forecast signals, routing, deal inspection), evaluation criteria, a pilot design template, guardrails and data requirements, a vendor evaluation scorecard (CSV). Research current tools before writing; cite what you find and date it.
+For every one of these: research first, cite sources with limits, ship the artefacts, use the shared stylesheet, and write a product page with a "What it isn't" paragraph. Never reference the operator, any employer, or any non-public information; everything must come from public sources and general practice.
+
 RULES
 - Legal and platform-compliant. No fake reviews, no scraping people, no misleading claims, no impersonation, no mention of the operator's name, employer or identity anywhere public.
 - Ship one good product, then drive traffic to it, then measure. Do not build a second product until the first has had 14 days of distribution.
