@@ -1,4 +1,17 @@
 {
-  "products": [],
+  "products": [
+    {
+      "name": "Lead Routing Playbook",
+      "price_eur": 19,
+      "checkout_url": "https://buy.stripe.com/4gM6oJ0mN6RP3aOasQ9AA00",
+      "delivery": "https://fieldnotes-ops.github.io/pot50/dl/qr7m2k9x/",
+      "stripe": {
+        "product": "prod_VDBpb6C11cqqbM",
+        "price": "price_1UClSGPCoOeWSvi8KrYBwNrI",
+        "payment_link": "plink_1UClSGPCoOeWSvi8iFXIa1DG"
+      },
+      "created": "2026-09-06T19:10:17.110862+00:00"
+    }
+  ],
   "articles": []
 }
