@@ -1,9 +1,13 @@
-Region,Company Size,Product Line,Channel,Owner Queue,SLA (min),Escalation
-NA,1-50,Core,Inbound form,SMB-AE-Pool,15,Team lead -> Slack #sla-breach
-NA,51-500,Core,Inbound form,MM-AE-Round-Robin,10,Manager email + Slack
-NA,500+,Any,Any,Named-Account-Owner,5,Direct page to owner + manager
-EMEA,1-50,Core,Inbound form,EMEA-SMB-Pool,30,Slack #sla-breach
-EMEA,51-500,Core,Inbound form,EMEA-MM-Pool,15,Manager email + Slack
-Any,Any,Add-on,In-product upsell,CS-Pool,60,CS manager digest
-Any,Any,Any,Partner referral,Partner-Desk,30,Partner manager Slack
-Any,Any,Any,Unmatched (catch-all),Triage-Queue,20,Ops on-call Slack
+Priority,Rule name,Match conditions,Owner queue,Distribution model,Covered-minute SLA,Service calendar,Escalation at SLA,Escalation at 2x SLA,Approved backup,Notes
+10,Open opportunity,Verified account with an open opportunity,Opportunity owner,Direct,15,Account,Account duty manager,Account duty manager,Account duty manager,Commercial owner stays; manager approval before changing responder
+20,Existing customer,Domain matches a customer; no rule above matched,Customer success owner,Direct,60,CS,CS duty manager,CS duty manager,CS pool,Holdout: never route customers to new-business reps
+30,Named prospect account,Domain on named-account list; no rule above matched,Named account owner,Direct,5,Account,Page owner + account duty manager,Account duty manager,Account duty manager,Tightest clock; page the owner
+40,Partner referral,Validated partner referral; no rule above matched,Partner desk,Round robin,30,Partner,Partner duty manager,Partner duty manager,Partner desk backup,Report partner volume separately
+50,Enterprise NA,NA; 501+ employees; any product; demo or contact-sales form,NA enterprise pool,Availability-aware round robin,5,NA,Slack #sla-breach + NA duty manager,NA duty manager pool,NA duty manager,Highest value inbound
+60,Enterprise EMEA,EMEA; 501+ employees; any product; demo or contact-sales form,EMEA enterprise pool,Availability-aware round robin,10,EMEA,Slack #sla-breach + EMEA duty manager,EMEA duty manager pool,EMEA duty manager,Calendar per country if coverage differs
+70,Mid-market NA,NA; 51-500 employees; Core; demo or contact-sales form,NA mid-market pool,Weighted round robin,10,NA,Slack #sla-breach,NA duty manager pool,NA duty manager,Weights by ramp status
+80,Mid-market EMEA,EMEA; 51-500 employees; Core; demo or contact-sales form,EMEA mid-market pool,Weighted round robin,15,EMEA,Slack #sla-breach,EMEA duty manager pool,EMEA duty manager,Weights by ramp status
+90,SMB NA,NA; 1-50 employees; Core; demo or contact-sales form,NA SMB pool,Round robin,15,NA,Team lead Slack,NA duty manager,NA SMB backup,Volume queue
+100,SMB EMEA,EMEA; 1-50 employees; Core; demo or contact-sales form,EMEA SMB pool,Round robin,30,EMEA,Team lead Slack,EMEA duty manager,EMEA SMB backup,Volume queue
+110,In-product upsell,Add-on product; in-product signal,CS pool,Round robin,60,CS,CS manager digest,CS duty manager,CS pool,Lower urgency; batching acceptable
+999,Triage catch-all,No earlier match or ambiguous account match,Triage duty rep,Round robin,15,Triage,Operations duty manager,Operations duty manager,Operations duty manager,Must exist; triage rep makes the first touch then resolves ownership; record reason

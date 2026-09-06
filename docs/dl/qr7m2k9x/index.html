@@ -4,85 +4,432 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lead Routing &amp; SLA Playbook — Delivery</title>
-<style>
-body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:820px;margin:40px auto;padding:0 20px;line-height:1.55;color:#222}
-h1{margin-bottom:.2em}h2{margin-top:1.8em;border-bottom:1px solid #ddd;padding-bottom:.2em}
-table{border-collapse:collapse;width:100%;font-size:.92em}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top}th{background:#f4f4f4}
-pre{background:#f6f8fa;padding:12px;overflow:auto;border-radius:6px;font-size:.9em}
-.note{background:#fff8e1;border-left:4px solid #f5c542;padding:10px 14px}
-.dl{display:inline-block;background:#1f6feb;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none}
-footer{margin-top:3em;font-size:.9em;color:#666}
-</style>
+<title>Lead Routing &amp; SLA Playbook</title>
+<link rel="stylesheet" href="../../assets/playbook.css">
 </head>
 <body>
-<p class="note">Thank you for your purchase. This is your full copy. Save this page (Ctrl/Cmd+P → PDF) or copy the sections you need into your CRM or automation tool.</p>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <div class="brand">Fieldnotes Ops</div>
+  <ol>
+    <li><a href="#evidence">Why minutes matter</a></li>
+    <li><a href="#agreement">The service agreement</a></li>
+    <li><a href="#principles">Design principles</a></li>
+    <li><a href="#models">Distribution models</a></li>
+    <li><a href="#matrix">The routing matrix</a></li>
+    <li><a href="#sla">The clock and the ladder</a></li>
+    <li><a href="#build">Building it in your stack</a></li>
+    <li><a href="#metrics">Metrics and review</a></li>
+    <li><a href="#rollout">Rollout and testing</a></li>
+    <li><a href="#failures">Troubleshooting</a></li>
+    <li><a href="#files">Files and sources</a></li>
+  </ol>
+  <p style="margin-top:20px"><button class="btn secondary" type="button" onclick="window.print()">Save as PDF</button></p>
+</nav>
+
+<main>
+<p class="ack"><strong>Purchase confirmed.</strong> This page is your copy. Bookmark it, or print to PDF (Ctrl/Cmd+P). The two spreadsheets are linked at the bottom and in section 5.</p>
+
 <h1>Lead Routing &amp; SLA Playbook</h1>
-<p><a class="dl" href="routing_matrix_template.csv" download>Download the editable routing matrix (CSV)</a></p>
+<p class="sub">How to get every inbound lead to the right owner in seconds, put a clock on it, and make the clock enforce itself.</p>
 
-<h2>1. Why routing breaks</h2>
-<p>Most B2B teams lose leads not because volume is high, but because ownership is ambiguous the moment a lead arrives. The fix isn't a smarter CRM. It's an explicit routing matrix plus a hard SLA clock that something (not someone) enforces.</p>
+<p>This is a working document for the person who owns the routing rules: a RevOps or sales ops lead, or a founder doing that job part-time. It assumes you have a CRM with workflow automation (HubSpot, Salesforce, or similar) and a Slack or Teams workspace. It does not assume a dedicated routing tool, although section 4 tells you when one starts paying for itself.</p>
 
-<h2>2. The routing matrix</h2>
-<p>Route on the smallest set of fields that actually predicts who should own the lead. In most B2B orgs that's region, company size band, product line, and inbound channel. Anything more granular decays fast as your org changes.</p>
-<table>
-<tr><th>Region</th><th>Company size</th><th>Product line</th><th>Channel</th><th>Owner queue</th><th>SLA (min)</th><th>Escalation</th></tr>
-<tr><td>NA</td><td>1-50</td><td>Core</td><td>Inbound form</td><td>SMB-AE-Pool</td><td>15</td><td>Team lead → Slack #sla-breach</td></tr>
-<tr><td>NA</td><td>51-500</td><td>Core</td><td>Inbound form</td><td>MM-AE-Round-Robin</td><td>10</td><td>Manager email + Slack</td></tr>
-<tr><td>NA</td><td>500+</td><td>Any</td><td>Any</td><td>Named-Account-Owner</td><td>5</td><td>Direct page to owner + manager</td></tr>
-<tr><td>EMEA</td><td>1-50</td><td>Core</td><td>Inbound form</td><td>EMEA-SMB-Pool</td><td>30</td><td>Slack #sla-breach</td></tr>
-<tr><td>EMEA</td><td>51-500</td><td>Core</td><td>Inbound form</td><td>EMEA-MM-Pool</td><td>15</td><td>Manager email + Slack</td></tr>
-<tr><td>Any</td><td>Any</td><td>Add-on</td><td>In-product upsell</td><td>CS-Pool</td><td>60</td><td>CS manager digest</td></tr>
-<tr><td>Any</td><td>Any</td><td>Any</td><td>Partner referral</td><td>Partner-Desk</td><td>30</td><td>Partner manager Slack</td></tr>
-<tr><td>Any</td><td>Any</td><td>Any</td><td>Unmatched (catch-all)</td><td>Triage-Queue</td><td>20</td><td>Ops on-call Slack</td></tr>
-</table>
-<p>Duplicate the CSV, delete rows that don't apply, add your own queues.</p>
+<p>Read sections 1 to 3 once. Sections 5 to 8 are the parts you'll come back to. Every deadline, grace period and target in here is an example operating choice to adapt and test against your own arrival patterns and staffing, not an industry standard.</p>
 
-<h2>3. SLA clock logic (pseudocode, works for HubSpot, Salesforce, Zapier, n8n)</h2>
-<pre>on lead.created:
-    match = lookup_matrix(lead.region, lead.company_size, lead.product_line, lead.channel)
-    assign(lead, match.owner_queue)
-    start_timer(lead.id, duration = match.sla_minutes)
+<h2 id="evidence"><span class="n">Section 1</span>Why minutes matter</h2>
 
-on timer.expired AND lead.status == "unworked":
-    notify(match.escalation_target)
-    reassign_if_no_response(after = match.sla_minutes * 2, target = "manager_pool")
+<p>Two studies underpin everything in this playbook, and they are worth knowing precisely because they are usually misquoted.</p>
 
-on lead.status == "worked":
-    cancel_timer(lead.id)
-    log_time_to_first_touch(lead.id)</pre>
+<p><strong>MIT Sloan / InsideSales.com, 2007.</strong> Dr James Oldroyd analysed roughly 15,000 leads and over 100,000 call attempts across six companies. The odds of making contact with a lead were about 100 times higher when the first call went out within 5 minutes than at 30 minutes, and the odds of qualifying the lead were about 21 times higher. Between 5 and 10 minutes the qualification odds had already fallen roughly fourfold.</p>
 
-<h2>4. Slack escalation webhook (copy-paste)</h2>
-<pre>POST https://hooks.slack.com/services/XXX/YYY/ZZZ
-{
-  "text": "SLA BREACH: Lead #{{lead.id}} ({{lead.company}}) unworked for {{minutes_over}} min past {{sla_minutes}} min SLA. Owner: {{owner_queue}}. Escalating to {{escalation_target}}."
-}</pre>
+<p><strong>Harvard Business Review, 2011.</strong> Oldroyd and colleagues audited 2,241 US companies by submitting a test lead to each. The average response time among those that responded at all was 42 hours; 23 percent never responded. Firms that contacted the lead within an hour were nearly 7 times more likely to have a meaningful conversation with a decision maker than those that waited even one more hour, and about 60 times more likely than those waiting 24 hours or longer.</p>
 
-<h2>5. Metrics to track weekly</h2>
+<figure>
+<svg viewBox="0 0 640 300" width="100%" role="img" aria-labelledby="curveTitle curveDesc" xmlns="http://www.w3.org/2000/svg" style="font-family:'IBM Plex Sans',sans-serif">
+  <title id="curveTitle">Relative odds of qualifying a lead by response time</title>
+  <desc id="curveDesc">A steep decay curve: odds fall roughly fourfold between 5 and 10 minutes and about 21-fold between 5 and 30 minutes.</desc>
+  <line x1="70" y1="250" x2="610" y2="250" stroke="#16213A" stroke-width="1.5"/>
+  <line x1="70" y1="30" x2="70" y2="250" stroke="#16213A" stroke-width="1.5"/>
+  <g font-size="12" fill="#6B7385">
+    <text x="70" y="270" text-anchor="middle">0</text>
+    <text x="160" y="270" text-anchor="middle">5</text>
+    <text x="250" y="270" text-anchor="middle">10</text>
+    <text x="340" y="270" text-anchor="middle">15</text>
+    <text x="430" y="270" text-anchor="middle">20</text>
+    <text x="520" y="270" text-anchor="middle">25</text>
+    <text x="610" y="270" text-anchor="middle">30</text>
+    <text x="340" y="292" text-anchor="middle">Minutes from lead submission to first call attempt</text>
+    <text x="20" y="150" text-anchor="middle" transform="rotate(-90 20 150)">Relative odds of qualifying</text>
+  </g>
+  <path d="M160,40 C200,120 230,180 250,200 C300,235 400,245 610,248" fill="none" stroke="#C97A00" stroke-width="3"/>
+  <circle cx="160" cy="40" r="5" fill="#C97A00"/>
+  <circle cx="250" cy="200" r="5" fill="#C97A00"/>
+  <circle cx="610" cy="248" r="5" fill="#C97A00"/>
+  <g font-size="12.5" fill="#16213A">
+    <text x="172" y="44">5 min: baseline (21x)</text>
+    <text x="262" y="196">10 min: roughly 5x</text>
+    <text x="500" y="236" text-anchor="end">30 min: 1x</text>
+  </g>
+</svg>
+<figcaption>Shape of the decay reported in the 2007 MIT/InsideSales study. Points are indexed to the 30-minute mark; the curve between them is illustrative.</figcaption>
+</figure>
+
+<p>Three honest caveats before you build a business case on this:</p>
 <ul>
-<li><strong>Time to first touch (TTFT)</strong>: median and p90, per queue. This is the number that correlates with conversion, not volume.</li>
-<li><strong>SLA breach rate</strong>: % of leads where the timer expired before first touch. Target under 5%.</li>
-<li><strong>Reassignment rate</strong>: high values mean the matrix has the wrong owner mapped somewhere. Fix the matrix, not the people.</li>
-<li><strong>Coverage gaps</strong>: leads that matched no row. Should be 0; if not, add a catch-all row routing to a triage queue.</li>
+<li>The primary data is old. It predates chat, calendar-booking links and most marketing automation. Vendors of routing and AI-SDR tools republish the numbers every year, sometimes with their own data attached, and their incentives are obvious. Treat the direction as settled and the exact multiples as directional.</li>
+<li>The studies measured <em>call attempts</em>. If your first touch is an email, the clock still matters, but the mechanism (catching the buyer while they are still at their desk thinking about the problem) is weaker. Where you can call, call.</li>
+<li>Speed helps qualification and contact rates. It is not evidence that faster response closes more revenue on its own; the buyer still has to be a fit. Speed removes a reason to lose; it does not create a reason to win.</li>
 </ul>
 
-<h2>6. Rollout checklist</h2>
-<ol>
-<li>Export the last 90 days of leads and tag each with region, size, product, channel.</li>
-<li>Build the matrix from actual distribution, not assumptions. Start with the 6 to 10 rows that cover 90% of volume, then add a catch-all.</li>
-<li>Implement the timer in whatever you already have (native CRM workflow, Zapier delay plus branch, or a small n8n flow). Don't wait for a "real" system.</li>
-<li>Turn on Slack escalation before you turn on reassignment. You want visibility before you automate consequences.</li>
-<li>Review breach rate weekly for 4 weeks, then monthly.</li>
+<p>The practical conclusion is unchanged: whatever your current time to first touch is, it is almost certainly measured in hours when it should be measured in minutes, and the first thing to do is measure it.</p>
+
+<h2 id="agreement"><span class="n">Section 2</span>The service agreement</h2>
+
+<p>A demo request arrives at 16:55 on a Friday. It matches two territories, the account owner is away, and nobody knows whether the clock runs over the weekend. An assignment rule can send that request somewhere; it cannot settle those questions. Settle them first, in writing, on one page. Sales and operations should be able to describe the same answers without opening a workflow.</p>
+
+<dl class="defs">
+<dt>Which requests count?</dt><dd>Start with explicit commercial requests: demo and contact-sales forms, partner introductions, customer expansion enquiries. Give content downloads, event lists, support tickets and bulk imports their own handling rules. Record why anything is excluded.</dd>
+<dt>Who owns the response?</dt><dd>One accountable person at all times. A pool distributes work; its duty manager remains accountable until a rep takes ownership. Keep "who responds" separate from "who owns the account" where those differ.</dd>
+<dt>What counts as first touch?</dt><dd>A logged call attempt to a usable number, or a rep-sent email addressing the enquiry, or a booked meeting. An internal task, an owner change, an automated receipt, or enrolment in a sequence does not. Track a successful conversation separately.</dd>
+<dt>When does the clock start?</dt><dd>At the earliest trustworthy receipt time of the request, not when it reached the CRM. Keep the CRM arrival time as well, so a slow integration is visible rather than hidden. Enrichment and assignment must never postpone the start.</dd>
+<dt>When does the clock run?</dt><dd>Choose <em>elapsed minutes</em> for a service staffed around the clock, or <em>covered minutes</em> for stated working hours. Define the timezone, weekdays, holidays and backup rota for each calendar. This playbook uses covered minutes throughout.</dd>
+<dt>Who handles a miss?</dt><dd>Name the on-duty manager and an available backup, per calendar. Agree the escalation interval, the reassignment conditions, and who is allowed to pause the automation.</dd>
+</dl>
+
+<div class="callout">Choose a promise the team can keep. An unmet 5-minute SLA is worse than a met 15-minute one, because reps learn to ignore the alerts. Set the first targets from a measured baseline (section 9, week 1), then tighten.</div>
+
+<h2 id="principles"><span class="n">Section 3</span>Design principles</h2>
+
+<h3>Route on the fewest fields that predict ownership</h3>
+<p>Every dimension you add to the matrix doubles the number of rows you have to maintain and halves the chance the matrix survives the next reorg. Four dimensions cover nearly every B2B team: region, company size band, product line, and inbound channel. If you find yourself adding industry, lead score bands and job title, stop and ask whether those belong in prioritisation (who gets called first) rather than routing (who owns it).</p>
+
+<h3>Scoring and routing are different jobs</h3>
+<p>Lead scoring estimates fit and intent. Routing decides who owns the record and which SLA applies. A score can feed a routing decision (for example, enterprise-scored leads skip the SMB pool) but if the two are entangled in one rule set, every scoring tweak silently changes ownership. Keep them in separate workflows with a clear handoff.</p>
+
+<h3>Availability is a routing input, not an afterthought</h3>
+<p>A lead assigned to someone on leave, in a four-hour offsite, or already sitting on 40 open leads is an unassigned lead with extra steps. The router should check working hours, out-of-office status and open-lead count before it assigns. If your CRM can't do that natively, the escalation ladder in section 6 is your safety net, but it is a net, not a design.</p>
+
+<h3>Something, not someone, enforces the clock</h3>
+<p>SLAs that depend on a manager noticing are not SLAs. The timer starts on lead creation, escalation fires automatically, and reassignment happens without a human deciding to do it. Humans set the policy; the system runs it.</p>
+
+<h3>Resolve identity before you distribute work</h3>
+<p>Before any segment rule runs, check the domain against existing accounts, customers and open opportunities. If the match is ambiguous, send the request straight to triage. Normalise country, employee count, product and channel, and use an explicit "unknown" value where data is missing: an unknown company size is not a small company, and a missing region should block only the rules that need a region, never a verified account owner's right to respond.</p>
+
+<h3>Every lead matches a row</h3>
+<p>A catch-all row routing to a staffed triage rep is mandatory, and the triage rep has a deadline too: make the first touch, then resolve ownership. An internal transfer alone does not meet the SLA. Triage volume is a metric; if more than a handful of leads a week land there, the matrix has a gap.</p>
+
+<h2 id="models"><span class="n">Section 4</span>Distribution models</h2>
+
+<p>Within a queue, you still have to pick which rep gets the lead. There are four models in common use and most teams end up with a blend.</p>
+
+<div class="tbl"><table>
+<tr><th>Model</th><th>How it assigns</th><th>Best for</th><th>Watch out for</th></tr>
+<tr><td>Simple round robin</td><td>Next rep in rotation, every time.</td><td>Small, homogeneous pools of 3 to 10 reps with similar skill and capacity.</td><td>Ignores everything about the rep except queue position: assigns to people on leave and to people already overloaded.</td></tr>
+<tr><td>Weighted round robin</td><td>Each rep has a weight; share of leads = weight divided by sum of weights.</td><td>Ramping new hires (0.5), part-timers, senior reps who carry other duties.</td><td>Use it for planned, documented differences. Using weights to encode untracked opinions about performance breeds resentment fast.</td></tr>
+<tr><td>Capacity-based</td><td>Skips reps above an open-lead or open-opportunity cap; resumes when they clear.</td><td>Teams where deal cycles vary a lot, so "same number of leads" is not "same workload".</td><td>Needs a clean definition of "open". Stale records inflate capacity and starve good reps.</td></tr>
+<tr><td>Availability-aware</td><td>Checks calendar, working hours, out-of-office before assigning.</td><td>Any team spanning time zones or with field reps.</td><td>Requires calendar integration or a manually maintained availability flag; the flag rots unless someone owns it.</td></tr>
+<tr><td>Territory or named account</td><td>Fixed owner by geography, segment or account list.</td><td>Enterprise and strategic accounts; anywhere comp plans depend on ownership.</td><td>Uneven flow. Rebalance quarterly and give territory owners an explicit SLA, not a pass.</td></tr>
+</table></div>
+
+<p>A sensible default for most B2B teams: named accounts and existing customers first (direct ownership), then weighted, availability-aware round robin inside each segment pool. Move beyond CRM-native routing when any of these is true: your team exceeds roughly 15 to 20 reps, deal sizes vary by an order of magnitude across segments, routing needs enrichment data or calendar checks, or you are maintaining more than about ten exceptions by hand. Dedicated tools (LeanData, Chili Piper, Default and similar) exist for exactly that point; before then they are overhead.</p>
+
+<p>Whatever the model, the assignment must be real-time. A workflow that batches every 15 minutes has already spent your entire SLA before the rep hears about the lead.</p>
+
+<h2 id="matrix"><span class="n">Section 5</span>The routing matrix</h2>
+
+<p>The matrix is evaluated top to bottom; the first matching row wins. Priority order matters more than people expect: named accounts and existing customers must be checked <em>before</em> any segment rule, otherwise a €200k customer's expansion request lands in the SMB pool because their form said "1 to 50 employees".</p>
+
+<div class="files">
+<a class="btn" href="routing_matrix_template.csv" download>Download the routing matrix (CSV)</a>
+</div>
+
+<div class="tbl"><table>
+<tr><th>Priority</th><th>Rule</th><th>Match conditions</th><th>Owner queue</th><th>Model</th><th>SLA (covered min)</th><th>Escalation at SLA</th></tr>
+<tr><td>10</td><td>Open opportunity</td><td>Verified account with an open opportunity</td><td>Opportunity owner</td><td>Direct</td><td>15</td><td>Account duty manager</td></tr>
+<tr><td>20</td><td>Existing customer</td><td>Domain matches a customer</td><td>CS owner</td><td>Direct</td><td>60</td><td>CS duty manager</td></tr>
+<tr><td>30</td><td>Named prospect</td><td>Domain on named-account list</td><td>Named account owner</td><td>Direct</td><td>5</td><td>Page owner + duty manager</td></tr>
+<tr><td>40</td><td>Partner referral</td><td>Validated partner referral</td><td>Partner desk</td><td>Round robin</td><td>30</td><td>Partner duty manager</td></tr>
+<tr><td>50</td><td>Enterprise NA</td><td>NA; 501+; any product; demo or contact form</td><td>NA enterprise pool</td><td>Availability-aware RR</td><td>5</td><td>#sla-breach + duty manager</td></tr>
+<tr><td>60</td><td>Enterprise EMEA</td><td>EMEA; 501+; any product; demo or contact form</td><td>EMEA enterprise pool</td><td>Availability-aware RR</td><td>10</td><td>#sla-breach + duty manager</td></tr>
+<tr><td>70</td><td>Mid-market NA</td><td>NA; 51 to 500; Core; demo or contact form</td><td>NA mid-market pool</td><td>Weighted RR</td><td>10</td><td>#sla-breach</td></tr>
+<tr><td>80</td><td>Mid-market EMEA</td><td>EMEA; 51 to 500; Core; demo or contact form</td><td>EMEA mid-market pool</td><td>Weighted RR</td><td>15</td><td>#sla-breach</td></tr>
+<tr><td>90</td><td>SMB NA</td><td>NA; 1 to 50; Core; demo or contact form</td><td>NA SMB pool</td><td>Round robin</td><td>15</td><td>Team lead</td></tr>
+<tr><td>100</td><td>SMB EMEA</td><td>EMEA; 1 to 50; Core; demo or contact form</td><td>EMEA SMB pool</td><td>Round robin</td><td>30</td><td>Team lead</td></tr>
+<tr><td>110</td><td>In-product upsell</td><td>Add-on; in-product signal</td><td>CS pool</td><td>Round robin</td><td>60</td><td>CS manager digest</td></tr>
+<tr><td>999</td><td>Triage catch-all</td><td>No earlier match, or ambiguous account</td><td>Triage duty rep</td><td>Round robin</td><td>15</td><td>Operations duty manager</td></tr>
+</table></div>
+
+<p>Priorities are numbered in tens so you can insert a rule without renumbering everything, and so the order is visible in the data rather than implied by row position. "Any product" means product does not restrict that rule; it does not make the other conditions optional. A pool must resolve to an available person; if a designated owner is unavailable, use that rule's approved backup rather than falling through to an unrelated pool.</p>
+
+<h3>Worked example</h3>
+<p>A new NA prospect with 500 employees submits a Core demo request. No account, customer or partner match, so rule 70 assigns the mid-market pool with a 10-minute clock. The same request with 501 employees is rule 50: enterprise pool, 5 minutes. The same request as a validated partner referral is rule 40, regardless of size: partner desk, 30 minutes. Test the boundary values (50, 51, 500, 501), not just a typical company.</p>
+
+<p>How to adapt it:</p>
+<ul>
+<li>Keep a calendar and pool register alongside the matrix: for each calendar label, the real timezone, service hours, holidays, eligible reps, duty manager and backup. "NA" and "EMEA" are illustrations, not coverage plans for whole continents.</li>
+<li>Start from your last 90 days of leads, tagged with the four dimensions. Keep the 6 to 10 rows that cover 90 percent of volume. Add the catch-all. Ship that. Add rows only when the triage queue tells you to.</li>
+<li>Company size from a form field is unreliable. Where you have enrichment (Clearbit, ZoomInfo, Apollo or similar), route on the enriched value and fall back to the form value.</li>
+<li>Region should follow the lead's company location, not the submitter's IP. A US buyer travelling in Lisbon is still NA.</li>
+<li>The CSV has columns for out-of-hours handling and second-stage escalation. Fill them in before you go live; they are where most breaches actually happen.</li>
+</ul>
+
+<h2 id="sla"><span class="n">Section 6</span>The clock and the ladder</h2>
+
+<h3>Setting the targets</h3>
+<p>Given the evidence, 5 minutes during working hours is the right target for anything high-value or high-intent, and 15 to 30 minutes is defensible for volume queues where reps are also working a pipeline. Don't set a target you can't staff: an unmet 5-minute SLA is worse than a met 15-minute one, because reps learn to ignore the alerts.</p>
+
+<div class="tbl"><table>
+<tr><th>Tier</th><th>Applies to</th><th>Working hours</th><th>Out of hours</th></tr>
+<tr><td>Platinum</td><td>Named accounts, enterprise inbound, demo requests</td><td>5 min</td><td>Instant automated acknowledgement with a booking link; 5 min from queue open</td></tr>
+<tr><td>Gold</td><td>Mid-market inbound</td><td>10 to 15 min</td><td>Automated acknowledgement; 15 min from queue open</td></tr>
+<tr><td>Standard</td><td>SMB inbound, partner referrals</td><td>15 to 30 min</td><td>Automated acknowledgement; 30 min from queue open</td></tr>
+<tr><td>Batch</td><td>Content downloads, upsell signals, event lists</td><td>60 min to same day</td><td>Next business day</td></tr>
+</table></div>
+
+<h3>Covered minutes: a worked example</h3>
+<p>Coverage is Monday to Friday, 09:00 to 17:00 Europe/Dublin. A request arrives Friday at 16:55 with a 15-minute SLA. Five covered minutes pass on Friday; the remaining ten end at 09:10 on Monday. The buyer has waited 64 hours and 15 minutes of elapsed time. An automated receipt sent on Friday does not stop the clock. A rep email at 09:08 Monday meets the promise; at 09:12 it misses by two covered minutes. Report covered and elapsed time side by side, so weekend waiting stays visible and you can decide whether it's acceptable.</p>
+
+<p>Store the absolute deadline the moment the rule is selected, computed from the original receipt time and the saved calendar. If a request reaches the CRM after its deadline has already passed, flag the breach immediately; starting a fresh timer would hide the integration delay. Never reset the deadline when enrichment finishes, a rep goes offline, or ownership changes. If policy allows a revised deadline, keep the original and record who approved the change.</p>
+
+<h3>Evidence to keep on every request</h3>
+<div class="tbl"><table>
+<tr><th>Record</th><th>What to keep</th></tr>
+<tr><td>Identity</td><td>Source and unique request ID; linked CRM record; eligibility decision and reason. A new enquiry from an existing contact may still be a new request.</td></tr>
+<tr><td>Timing</td><td>Source receipt, CRM arrival, assignment, deadline, first qualifying touch, and when each was logged. Store in UTC; retain the calendar name.</td></tr>
+<tr><td>Routing</td><td>Matched rule and version; calendar and version; initial and current response owner; fallback reason if any.</td></tr>
+<tr><td>Exceptions</td><td>Breach time; alert delivery state; reassignment count and reason; any authorised manual override.</td></tr>
+</table></div>
+<p>Do not rewrite historical results when the matrix changes. Version the matrix and the calendars, and report against the version that was live at the time.</p>
+
+<h3>The escalation ladder</h3>
+<p>Escalation is a sequence with fixed intervals measured in multiples of the SLA, so one rule set works for every tier.</p>
+<ol class="ladder">
+<li><span>T + 0</span><span>Lead created, matched, assigned. Rep notified where they actually work (Slack DM or mobile push), with name, company, source, one enrichment fact and the suggested first move. A CRM task alone is not a notification.</span></li>
+<li><span>T + SLA</span><span>Still unworked: post to the escalation channel and re-notify the rep. Record the breach on the lead.</span></li>
+<li><span>T + 2×SLA</span><span>Notify the manager. Reassign to the next available rep in the pool. Log the reassignment with reason.</span></li>
+<li><span>T + 4×SLA</span><span>Route to the manager pool. Manager owns the first touch personally. This should be rare; if it isn't, the pool is understaffed for the SLA.</span></li>
 </ol>
 
-<h2>7. Common failure modes</h2>
+<h3>Rules that stop the ladder misbehaving</h3>
 <ul>
-<li>Matrix too granular: routes break every reorg. Keep it to 4 dimensions max.</li>
-<li>SLA timer with no escalation target: breaches pile up silently. Always name a person or pool, never "the team".</li>
-<li>No catch-all row: leads that match nothing vanish into an unassigned queue forever.</li>
-<li>Reassignment with no cooldown: leads ping-pong between reps. Add a minimum hold time before re-routing.</li>
+<li><strong>Cooldown.</strong> A reassigned lead cannot be reassigned again for at least one full SLA interval. Without this, leads ping-pong.</li>
+<li><strong>Working-hours awareness.</strong> The clock pauses outside the queue's working hours and resumes when the queue opens. A form submitted at 23:00 is not a breach at 23:05; it is a breach at 09:05.</li>
+<li><strong>Holdouts.</strong> Existing customers and open opportunities never enter new-business routing, regardless of form. Check the domain against customers first.</li>
+<li><strong>One clock per lead.</strong> Cancel the timer on first touch, using the section 2 definition. Opening the record, creating a task, or an automated receipt does not count.</li>
+<li><strong>At most one automated rescue.</strong> If the backup is unavailable or a transfer is unsafe (named accounts and open opportunities often need manager approval), create a manager intervention task and keep the current accountable owner visible. Never circulate a request between empty queues.</li>
+<li><strong>A breach stays a breach.</strong> A late first touch is recorded as late. The only correction is trusted evidence that the response actually happened on time and was logged late; keep the correction history and mark the earlier alert superseded.</li>
 </ul>
 
-<footer>Fieldnotes Ops. Practical playbooks for people who build the systems, not just use them. Questions or problems with this file: reply to your Stripe receipt email.</footer>
+<h2 id="build"><span class="n">Section 7</span>Building it in your stack</h2>
+
+<h3>Fields you need before anything else</h3>
+<div class="tbl"><table>
+<tr><th>Field</th><th>Set by</th><th>Purpose</th></tr>
+<tr><td><code>lead_created_at</code></td><td>CRM, automatic</td><td>Clock start</td></tr>
+<tr><td><code>matched_rule</code></td><td>Router</td><td>Which matrix row fired; drives every per-queue metric</td></tr>
+<tr><td><code>assigned_at</code></td><td>Router</td><td>Time to assignment (should be seconds)</td></tr>
+<tr><td><code>sla_minutes</code></td><td>Router, from matrix</td><td>Makes the SLA a data value, not hard-coded logic</td></tr>
+<tr><td><code>sla_due_at</code></td><td>Router</td><td>created + SLA, adjusted for working hours</td></tr>
+<tr><td><code>first_touch_at</code></td><td>Activity logging</td><td>Clock stop; time to first touch = this minus created</td></tr>
+<tr><td><code>sla_breached</code></td><td>Timer</td><td>Boolean, set once, never cleared</td></tr>
+<tr><td><code>reassigned_count</code></td><td>Router</td><td>Ping-pong detector</td></tr>
+</table></div>
+
+<h3>Logic, in pseudocode</h3>
+<p>This is the shape of the automation, not executable CRM code. Your platform has to supply durable scheduling, calendar arithmetic, activity matching and atomic state changes; the notes for each platform follow.</p>
+<pre><code>on eligible_request_received(event):
+    request = create_once(event.source, event.request_id)   # atomic; a replayed event cannot make a second clock
+    if request.already_exists: return
+    if is_customer(request.domain) or has_open_opportunity(request.domain):
+        rule = holdout_rule_for(request)                    # rules 10, 20: direct to the existing owner
+    elif ambiguous_account_match(request):
+        rule = TRIAGE
+    else:
+        rule = first_matching_row(matrix, request)          # ordered by priority; TRIAGE if none
+    rep = pick(rule.owner_queue, rule.model)                # weighted / availability-aware / direct / backup
+    save request.matched_rule, rule.version, rule.calendar, rule.sla_minutes
+    request.due_at = add_covered_minutes(request.received_at, rule.sla_minutes, rule.calendar)
+    if now > request.due_at: record_breach(request)         # late ingestion is a breach, not a fresh clock
+    assign(request, rep); request.assigned_at = now
+    notify(rep, payload(request))
+    schedule_durably(deadline_check, request.id, at = request.due_at)
+
+on deadline_check(request_id):
+    request = reread(request_id)                            # always reread; never trust job-time state
+    if request.first_touch_at and request.first_touch_at <= request.due_at: mark_met(request); return
+    if now < request.due_at: reschedule(request.due_at); return
+    record_breach_once(request, effective = request.due_at)
+    if not request.first_touch_at:
+        alert_once(rule.escalation_target, breach_payload(request), key = (request.id, "breach"))
+        schedule_durably(rescue_check, request.id, at = add_covered_minutes(request.due_at, rule.sla_minutes))
+
+on rescue_check(request_id):
+    request = reread(request_id)
+    if request.first_touch_at or request.rescue_attempted: return
+    if backup_available(rule) and hold_time_satisfied(request):     # cooldown: one full SLA since last assignment
+        reassign_once(request, backup); request.reassigned_count += 1   # original due_at is preserved
+        notify(rule.duty_manager, reassigned_payload(request))
+    else:
+        create_manager_task(rule.duty_manager, request)     # keep named accountability; do not bounce
+
+on qualifying_activity_logged(activity):                    # call attempt, rep-sent email, booked meeting
+    request = reread(activity.request_id)
+    if not request.first_touch_at or activity.occurred_at < request.first_touch_at:
+        request.first_touch_at = activity.occurred_at       # trusted occurrence time, not log time
+        request.outcome = "met" if request.first_touch_at <= request.due_at else "breached"
+        if outcome changed: record_correction(request); supersede_alerts(request)
+    cancel_pending(request)                                 # remaining jobs still reread state on wake
+
+every N minutes (N <= shortest SLA):                        # sweeper: catches lost timer jobs
+    for request in past_due_without_outcome():
+        deadline_check(request.id)                          # updates the same breach record; no new alerts</code></pre>
+
+<h3>HubSpot</h3>
+<ul>
+<li>Routing: a contact-based workflow triggered on <em>Create date is known</em>. Use if/then branches in matrix priority order; each branch ends in a <em>Rotate contact to owner</em> action against a team (weighted rotation is available on higher tiers) and sets <code>matched_rule</code> and <code>sla_minutes</code>.</li>
+<li>Timer: a <em>Delay</em> of the SLA duration followed by an if/then on <em>Last contacted is unknown</em>. HubSpot delays don't natively pause for working hours; use the team's working-hours setting on rotation, or compute <code>sla_due_at</code> with a custom-code action if you're on Operations Hub.</li>
+<li>Escalation: <em>Send Slack notification</em> action (Slack integration) or an internal email. Reassignment is another rotate action with the current owner excluded.</li>
+<li>First touch: <em>Last contacted</em> updates on logged calls, emails and meetings; use it as <code>first_touch_at</code> via a workflow that copies it on first change.</li>
+</ul>
+
+<h3>Salesforce</h3>
+<ul>
+<li>Routing: Lead Assignment Rules cover the matrix in priority order for direct and queue assignment. For round robin, the classic pattern is a round-robin counter field on the lead plus assignment rule entries; for weighted or availability-aware rotation you'll want Flow with a custom object holding weights and availability, or a routing package.</li>
+<li>Timer: a record-triggered Flow with a <em>Scheduled Path</em> at <code>sla_due_at</code>. Business hours are a first-class object; use <code>BusinessHours.add()</code> in Apex or a Flow formula to compute the due time.</li>
+<li>Escalation: Chatter post, email alert, or Slack via the Salesforce-Slack integration. Reassignment updates <code>OwnerId</code> and increments the reassignment counter.</li>
+<li>First touch: a Flow on Task/Event creation that stamps <code>first_touch_at</code> on the parent lead if empty.</li>
+</ul>
+
+<h3>Zapier, Make, n8n</h3>
+<p>Same shape: trigger on new lead, look up the matrix (a Google Sheet or Airtable works), update owner, then a <em>Delay Until</em> the due time and a conditional check. n8n handles the looping and cooldown logic more comfortably than Zapier. These are fine for under a few hundred leads a month; above that, native CRM automation or a routing tool is cheaper and more auditable.</p>
+
+<h3>Slack escalation message</h3>
+<pre><code>POST https://hooks.slack.com/services/XXX/YYY/ZZZ
+Content-Type: application/json
+
+{
+  "text": "SLA missed | {{company}} | Rule {{matched_rule}}\nOwner: {{response_owner}} | Due: {{due_at_with_tz}} | Overdue: {{covered_minutes_over}} covered min\nAction: {{duty_manager}}, confirm who responds. Rescue at {{rescue_at_with_tz}}\n{{crm_record_url}}",
+  "unfurl_links": false,
+  "unfurl_media": false
+}</code></pre>
+<p>Send it from your automation tool's HTTP action using its JSON encoder, so quotes and line breaks in values are escaped. The webhook URL contains a secret; keep it in the tool's connection settings, never in a page or a shared doc. Keep the message to request, owner, timing, action and a permission-controlled CRM link; customer notes and contact details stay in the CRM.</p>
+
+<h3>Plan for the alert not arriving</h3>
+<p>Save an alert event before attempting delivery, keyed by request ID and escalation stage. Retry temporary failures with bounded delays; send permanent failures to operations. Keep a CRM task as a fallback that does not depend on Slack. A network timeout can leave delivery uncertain, so an occasional duplicate message must never trigger a second reassignment; the idempotency keys in the pseudocode are what make that safe. And when alerts go quiet, check delivery and scheduler health before trusting the silence.</p>
+
+<h2 id="metrics"><span class="n">Section 8</span>Metrics and review</h2>
+
+<div class="files">
+<a class="btn" href="sla_metrics_tracker.csv" download>Download the weekly metrics tracker (CSV)</a>
+</div>
+
+<dl class="defs">
+<dt>Time to first touch (TTFT)</dt><dd><code>first_touch_at − received_at</code>, for requests with a qualifying touch. Report median and p90 per queue, in covered minutes and elapsed minutes separately. The p90 is where your breaches live; the median hides them.</dd>
+<dt>Time to assignment</dt><dd><code>assigned_at − lead_created_at</code>. Should be under 60 seconds. If it isn't, your automation is batching or your enrichment step is slow.</dd>
+<dt>SLA breach rate (cohort method)</dt><dd>Take one receipt cohort, for example last week's eligible requests. At the reporting cut-off include only those whose deadline has passed. Count a breach if the first touch was later than the deadline or is still missing. Show requests with future deadlines as pending, not as met. Worked example: 100 requests in the cohort, 90 past deadline at cut-off, of which 6 were touched late and 3 are still untouched; breach rate is 9 ÷ 90 = 10 percent. The 10 pending don't enter the denominator yet. A target under 5 percent is a reasonable operating target once stable; label it as yours, not as a universal standard. Review per queue before per rep: a bad queue number is usually staffing.</dd>
+<dt>Untouched requests</dt><dd>Count and oldest age, per queue, at the cut-off. Percentile response times leave these out entirely, which is exactly how a queue with three abandoned enterprise leads can look healthy.</dd>
+<dt>Reassignment rate</dt><dd>Leads with <code>reassigned_count ≥ 1</code> over leads created. Above 10 percent means the matrix or the availability data is wrong. Above 25 percent and reps have learned to let leads time out.</dd>
+<dt>Unmatched leads</dt><dd>Count landing in the catch-all row. Target zero. Every one is a missing matrix row.</dd>
+<dt>Contacted and qualified rates by TTFT bucket</dt><dd>Bucket leads by TTFT (under 5, 5 to 15, 15 to 60, over 60 minutes) and compare contact and qualification rates. This is your own version of the MIT curve, on your own data, and it is the number that ends the argument about whether speed matters here.</dd>
+</dl>
+
+<h3>Example query</h3>
+<pre><code>select
+  matched_rule                                              as queue,
+  date_trunc('week', lead_created_at)                       as week,
+  count(*)                                                  as leads,
+  percentile_cont(0.5) within group (order by ttft_minutes) as ttft_median,
+  percentile_cont(0.9) within group (order by ttft_minutes) as ttft_p90,
+  avg(case when sla_breached then 1 else 0 end)             as breach_rate,
+  avg(case when reassigned_count > 0 then 1 else 0 end)     as reassign_rate
+from leads
+where lead_created_at >= current_date - interval '8 weeks'
+group by 1, 2
+order by 2 desc, 1;</code></pre>
+
+<h3>Weekly review, 20 minutes</h3>
+<ol>
+<li>Oldest untouched requests first. Someone owns each one by the end of the meeting.</li>
+<li>Breach rate and p90 TTFT by queue. Any queue over target: staffing, hours, or alerting?</li>
+<li>Triage volume, split by reason. Add or fix matrix rows.</li>
+<li>Reassignments, split by cause: unavailable rep, bad match, capacity, SLA rescue. Also failed assignments, overdue timer jobs and undelivered alerts.</li>
+<li>Read three breaches and three triage cases. Separate late receipt, wrong routing, unavailable coverage, failed automation, and slow rep response. Assign each fix a person and a date.</li>
+</ol>
+<p>Do not improve the breach rate by marking late requests "ineligible" after the fact. If a request was genuinely outside the agreed policy, document the evidence and correct the cohort transparently. Track meeting and opportunity outcomes separately; faster logged activity does not by itself prove a better response.</p>
+
+<h2 id="rollout"><span class="n">Section 9</span>Rollout and testing</h2>
+
+<h3>Week 1: measure</h3>
+<p>Add the fields from section 7. Backfill <code>first_touch_at</code> for the last 90 days from activity history. Compute current TTFT median and p90 per segment, and count requests that were never touched. Include peak days. Most teams find hours where they assumed minutes; the gap between assumed and measured is the business case, so write it down before you change anything.</p>
+
+<h3>Week 2: agree the policy, build the matrix, run it in shadow</h3>
+<p>Write the one-page service agreement (section 2) and get sales and operations to sign it, with a version and effective date. Tag the last 90 days of leads with the four dimensions and build the matrix from actual distribution. Then replay those historical requests through the matrix <em>without changing owners</em> and compare proposed assignments with what actually happened. Investigate every difference with the relevant manager. Resolve overlapping rules and unstaffed destinations before anything goes live.</p>
+
+<h3>Week 3: assignment and visibility</h3>
+<p>Turn on real-time assignment, deadline recording and rep notification for one queue. Turn on the T+SLA alert to the channel only. No reassignment yet. Review exceptions daily. This gives you a week of breach data with no consequences attached, which is the only way to set targets people will accept.</p>
+
+<h3>Week 4: controlled rescue, then expand</h3>
+<p>Run the acceptance tests below. Enable automated rescue with cooldown only after they pass. Expand queue by queue, keeping the previous rule version and a staffed manual triage path available. Hold the first weekly review. Weekly for a month, then monthly.</p>
+
+<h3>Minimum acceptance tests</h3>
+<div class="tbl"><table>
+<tr><th>Test</th><th>Expected result</th></tr>
+<tr><td>Boundary values</td><td>50, 51, 500 and 501 employees land in the intended bands; no overlapping ranges.</td></tr>
+<tr><td>Competing rules</td><td>An open-opportunity account arriving via partner referral follows the agreed priority, with exactly one response owner.</td></tr>
+<tr><td>Missing or ambiguous data</td><td>Ambiguous account match reaches triage; a verified relationship routes without size data if its rule doesn't need it.</td></tr>
+<tr><td>Unavailable rep or empty pool</td><td>The approved backup or triage rep takes accountability; nothing is silently dropped.</td></tr>
+<tr><td>Replay</td><td>The same source event twice creates one request and one clock.</td></tr>
+<tr><td>Calendar edges</td><td>Before opening, at closing, over a weekend, on a holiday, and across a daylight-saving change all produce the expected UTC deadline.</td></tr>
+<tr><td>Clock boundary</td><td>A touch exactly at the deadline meets the policy; a later touch breaches; an automated receipt never satisfies it.</td></tr>
+<tr><td>Late ingestion or late logging</td><td>A request arriving after its deadline is flagged; a delayed log of an on-time response corrects the outcome with an audit record.</td></tr>
+<tr><td>Owner change and duplicate jobs</td><td>The original deadline survives reassignment; duplicate timer jobs cannot cause repeated transfers.</td></tr>
+<tr><td>Delivery failure</td><td>A failed Slack message or a lost scheduler job becomes visible through the sweeper and the CRM task fallback.</td></tr>
+</table></div>
+
+<h3>Write the rollback before launch</h3>
+<p>Name who can pause assignment and rescue. Pausing keeps existing deadlines, evidence and overdue reporting intact; new requests go to staffed manual triage while the previous rules are restored; work that arrived during the pause is reconciled afterwards. Keep a small change log: reason, affected rules, approver, effective time, test evidence, rollback version. Re-run the relevant tests whenever territories change, someone leaves, a channel is added, or service hours move.</p>
+
+<h2 id="failures"><span class="n">Section 10</span>Troubleshooting</h2>
+
+<div class="tbl"><table>
+<tr><th>Symptom</th><th>Usual cause</th><th>Fix</th></tr>
+<tr><td>Rules break every reorg</td><td>Matrix has too many dimensions</td><td>Cap at four dimensions. Put everything else in prioritisation.</td></tr>
+<tr><td>Breaches pile up silently</td><td>Escalation target is "the team"</td><td>Every row names a person or a pool. Never a channel with no owner.</td></tr>
+<tr><td>Leads vanish</td><td>No catch-all row</td><td>Add it. Report its volume weekly.</td></tr>
+<tr><td>Leads bounce between reps</td><td>No reassignment cooldown</td><td>One full SLA interval minimum between reassignments.</td></tr>
+<tr><td>Night-time breaches</td><td>Clock ignores working hours</td><td>Compute <code>sla_due_at</code> against queue hours. Auto-acknowledge out of hours.</td></tr>
+<tr><td>Customers routed to new business</td><td>No holdout check</td><td>Domain match against customers and open opportunities before the matrix.</td></tr>
+<tr><td>One rep drowning, others idle</td><td>Round robin ignores capacity</td><td>Capacity cap on open leads; weighted rotation for ramping reps.</td></tr>
+<tr><td>Assignment takes 15 minutes</td><td>Workflow runs on a batch schedule</td><td>Event-triggered assignment only. Move enrichment after assignment if it's slow.</td></tr>
+<tr><td>Reps ignore alerts</td><td>SLA is unrealistic for staffing</td><td>Loosen the target to one you can hit, then tighten as coverage improves.</td></tr>
+<tr><td>Good breach numbers, poor conversion</td><td>Speed without quality of first touch</td><td>Put the suggested first move in the notification payload. Review three calls a week.</td></tr>
+<tr><td>Everything is assigned, buyers still wait</td><td>Work sits in a pool with no person</td><td>Compare queue arrival, individual assignment and first touch. Duty manager owns unclaimed requests.</td></tr>
+<tr><td>SLA looks perfect, nobody has spoken to a lead</td><td>Stop event is too loose</td><td>Require the section 2 definition of first touch. Report conversations separately.</td></tr>
+<tr><td>Monday mornings are already full of breaches</td><td>Calendar, holiday or weekend promise is wrong</td><td>Check the calendar register, then compare Monday arrivals plus carry-over with staffed capacity.</td></tr>
+<tr><td>Alerts stopped, so the problem must be fixed</td><td>Delivery or scheduler failure</td><td>Compare overdue requests with recorded alert attempts. Repair monitoring before trusting silence.</td></tr>
+</table></div>
+<p>The operating standard is simple to state: take any request and show who was responsible, when a response was due, what happened, and who handled the exception. If the team can answer that from the record, the system is doing its job.</p>
+
+<h2 id="files"><span class="n">Section 11</span>Files and sources</h2>
+
+<div class="files">
+<a class="btn" href="routing_matrix_template.csv" download>Routing matrix (CSV)</a>
+<a class="btn" href="sla_metrics_tracker.csv" download>Weekly metrics tracker (CSV)</a>
+</div>
+
+<p>Open the CSVs in Google Sheets or Excel. The matrix is a policy worksheet, not a ready-to-import CRM configuration: one row per rule in priority order, with calendar, second-stage escalation and approved backup columns. Replace the role labels with a maintained rota or real people, then translate the conditions into your tool. The tracker has one row per queue per week; fill it from the query in section 8.</p>
+
+<h3>Sources</h3>
+<ol class="sources">
+<li>Oldroyd, J. (2007). <em>Lead Response Management Study</em>. MIT Sloan / InsideSales.com. Six companies, roughly 15,000 leads, 100,000+ call attempts. Source of the 100x contact and 21x qualification findings at 5 versus 30 minutes.</li>
+<li>Oldroyd, J., McElheran, K., Elkington, D. (2011). "The Short Life of Online Sales Leads." <em>Harvard Business Review</em>, March 2011. Audit of 2,241 US firms: 42-hour average response, 23 percent no response, roughly 7x qualification odds within the first hour.</li>
+<li>Vendor-published analyses (LeanData, Chili Piper, Drift, Velocify and others, 2020 to 2026) repeat and extend these findings, including claims that the average B2B response time is still around 42 hours and that a majority of buyers choose the first vendor to respond. Useful for direction; sourced from companies selling speed.</li>
+<li>Distribution models and thresholds in section 4 reflect current documented practice from routing-tool vendors and RevOps practitioners; the 15 to 20 rep threshold for outgrowing CRM-native routing is a widely cited rule of thumb, not a study result.</li>
+</ol>
+
+<footer>Fieldnotes Ops. Practical playbooks for the people who build the systems. If a link on this page breaks or a file is wrong, reply to your Stripe receipt and it will be fixed.</footer>
+</main>
+</div>
 </body>
 </html>
