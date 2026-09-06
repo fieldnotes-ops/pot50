@@ -52,6 +52,13 @@
       "amount": 9.6,
       "note": "domain fieldnotesops.com, 1 year (Namecheap, GBP 8.26), paid by operator",
       "ref": "namecheap"
+    },
+    {
+      "ts": "2026-09-06T21:03:00+00:00",
+      "kind": "spend",
+      "amount": 0.2298,
+      "note": "compute (tokens)",
+      "ref": null
     }
   ],
   "reconciled_ids": []
