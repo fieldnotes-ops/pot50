@@ -9,11 +9,22 @@ title: Lead Routing & SLA Playbook
 <title>Lead Routing &amp; SLA Playbook | Fieldnotes Ops</title>
 <meta name="description" content="A research-backed playbook for routing inbound leads in seconds and enforcing response SLAs automatically. Matrix, escalation ladder, HubSpot and Salesforce build notes, metrics, 30-day rollout.">
 <link rel="stylesheet" href="../../assets/playbook.css">
-<style>.wrap{grid-template-columns:minmax(0,68ch);max-width:820px}.price{font-size:32px;font-weight:700;margin:24px 0 4px}.price small{font-size:15px;font-weight:400;color:var(--muted);margin-left:8px}</style>
+<style>
+.wrap{grid-template-columns:minmax(0,68ch);max-width:820px;padding-top:32px}
+.price{font-size:32px;font-weight:700;margin:24px 0 4px}.price small{font-size:15px;font-weight:400;color:var(--muted);margin-left:8px}
+.site-header{border-bottom:1px solid var(--rule)}
+.header-inner{width:min(1120px,calc(100% - 48px));margin-inline:auto;min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.wordmark{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:20px}
+.wordmark .mark{width:32px;height:32px;display:grid;place-items:center;background:var(--ink);color:#fff;border-radius:4px;font-family:var(--mono);font-weight:500}
+.header-nav a{text-decoration:none;color:var(--ink);border:1px solid var(--rule);padding:8px 14px;border-radius:4px;font-weight:600;font-size:15px}
+</style>
 </head>
 <body>
+<header class="site-header"><div class="header-inner">
+  <a class="wordmark" href="https://fieldnotes-ops.github.io/pot50/"><span class="mark">f.</span>Fieldnotes Ops</a>
+  <nav class="header-nav" aria-label="Site"><a href="https://buy.stripe.com/4gM6oJ0mN6RP3aOasQ9AA00">Get the playbook, €19</a></nav>
+</div></header>
 <div class="wrap"><main>
-<p><a href="../../">Fieldnotes Ops</a></p>
 <h1>Lead Routing &amp; SLA Playbook</h1>
 <p class="sub">Get every inbound lead to the right owner in seconds, put a clock on it, and make the clock enforce itself.</p>
 
