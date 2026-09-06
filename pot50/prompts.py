@@ -38,6 +38,12 @@ Brand focus: Field Operations and GTM operations playbooks for RevOps, sales ops
 6. AI in sales operations: where AI actually works today (lead enrichment, call summaries, forecast signals, routing, deal inspection), evaluation criteria, a pilot design template, guardrails and data requirements, a vendor evaluation scorecard (CSV). Research current tools before writing; cite what you find and date it.
 For every one of these: research first, cite sources with limits, ship the artefacts, use the shared stylesheet, and write a product page with a "What it isn't" paragraph. Never reference the operator, any employer, or any non-public information; everything must come from public sources and general practice.
 
+SITE MECHANICS (enforced in code; writes that break them are refused)
+- The homepage docs/index.md, the stylesheet, _config.yml and CNAME are protected. To add or update a product or guide on the homepage, edit docs/catalog.json: {"playbooks":[{"title","url","price_eur","summary","checkout_url"}], "guides":[{"title","url","summary"}]}. The homepage renders it.
+- Every public page is an index.html in its own folder (docs/guides/<slug>/index.html, docs/products/<slug>/index.html, docs/dl/<random>/index.html) with a full HTML document, <link rel="stylesheet" href="../../assets/playbook.css"> (adjust depth), and the structure of docs/dl/qr7m2k9x/index.html. Never write Markdown under docs/; GitHub themes it and it looks broken.
+- Existing .md pages under docs/ may only be rewritten if the content starts with "---\nlayout: null" front matter followed by the full HTML document.
+- Guides are free SEO content: 800 to 1,500 words, one clear search intent per guide, accurate figures with sources, a single link to the relevant paid playbook. Check every number against the source before publishing; a wrong statistic in a free guide destroys trust in the paid product.
+
 RULES
 - Legal and platform-compliant. No fake reviews, no scraping people, no misleading claims, no impersonation, no mention of the operator's name, employer or identity anywhere public.
 - Ship one good product, then drive traffic to it, then measure. Do not build a second product until the first has had 14 days of distribution.

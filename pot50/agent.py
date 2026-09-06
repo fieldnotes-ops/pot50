@@ -66,9 +66,25 @@ def recent(items, key, days):
     return [i for i in items if datetime.fromisoformat(i[key]) > cutoff]
 
 
+PROTECTED = {"docs/index.md", "docs/index.html", "docs/assets/playbook.css", "docs/_config.yml", "docs/CNAME"}
+
+
 def safe_path(p):
     p = Path(p)
     return p.parts and p.parts[0] in ALLOWED_ROOTS and ".." not in p.parts
+
+
+def write_guard(path, content):
+    """Return a refusal string, or None if the write is allowed."""
+    if path in PROTECTED:
+        return "refused: protected file. The homepage renders docs/catalog.json; edit that instead."
+    if path.startswith("docs/") and path.endswith(".md"):
+        if Path(path).exists() and content.lstrip().startswith("---\nlayout: null"):
+            return None
+        return "refused: no Markdown under docs/ (it gets themed). Write index.html files instead."
+    if path.startswith("docs/") and path.endswith(".html") and "assets/playbook.css" not in content:
+        return "refused: public pages must link the shared stylesheet assets/playbook.css."
+    return None
 
 
 def run_model(ledger, state):
@@ -88,8 +104,11 @@ def run_model(ledger, state):
             name, inp, out = b.name, b.input, "ok"
             try:
                 if name == "write_file":
+                    guard = None if not safe_path(inp["path"]) else write_guard(inp["path"], inp["content"])
                     if not safe_path(inp["path"]):
                         out = "refused: path must be under docs/, products/ or drafts/"
+                    elif guard:
+                        out = guard; log(f"write refused {inp['path']}: {guard}")
                     else:
                         p = Path(inp["path"]); p.parent.mkdir(parents=True, exist_ok=True)
                         p.write_text(inp["content"]); log(f"wrote {p}")
