@@ -24,7 +24,15 @@
       "amount": 0.1025,
       "note": "compute (tokens)",
       "ref": null
+    },
+    {
+      "ts": "2026-09-06T19:02:52+00:00",
+      "kind": "info",
+      "amount": 0.0,
+      "note": "dry run",
+      "ref": null
     }
   ],
-  "reconciled_sale_ids": []
+  "reconciled_sale_ids": [],
+  "reconciled_ids": []
 }
