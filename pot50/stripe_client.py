@@ -4,6 +4,7 @@ import requests
 from . import config as C
 
 BASE = "https://api.stripe.com/v1"
+TAX_CODE_DIGITAL = "txcd_10000000"  # General - Electronically Supplied Services
 
 
 def _auth():
@@ -12,7 +13,12 @@ def _auth():
 
 def _post(path, data):
     r = requests.post(f"{BASE}{path}", auth=_auth(), data=data, timeout=30)
-    r.raise_for_status()
+    if r.status_code >= 400:
+        try:
+            msg = r.json().get("error", {}).get("message", r.text)
+        except Exception:
+            msg = r.text
+        raise RuntimeError(f"stripe {path} {r.status_code}: {msg[:300]}")
     return r.json()
 
 
@@ -24,15 +30,22 @@ def _get(path, params=None):
 
 def create_sellable(name, description, price_eur, delivery_url):
     """Product + price + payment link. Returns (payment_link_url, ids)."""
-    prod = _post("/products", {"name": name, "description": description[:500]})
+    prod = _post("/products", {"name": name, "description": description[:500], "tax_code": TAX_CODE_DIGITAL})
     price = _post("/prices", {"product": prod["id"], "unit_amount": int(round(price_eur * 100)),
                               "currency": "eur"})
-    link = _post("/payment_links", {
+    body = {
         "line_items[0][price]": price["id"], "line_items[0][quantity]": 1,
         "after_completion[type]": "redirect",
         "after_completion[redirect][url]": delivery_url,
         "metadata[pot50_product]": name,
-    })
+    }
+    try:
+        link = _post("/payment_links", body)
+    except RuntimeError as e:
+        if "managed" in str(e).lower() or "tax code" in str(e).lower():
+            link = _post("/payment_links", {**body, "managed_payments[enabled]": "false"})
+        else:
+            raise
     return link["url"], {"product": prod["id"], "price": price["id"], "payment_link": link["id"]}
 
 
@@ -49,5 +62,5 @@ def succeeded_charges(limit=100):
 def net_eur(charge):
     amt = charge["amount"] / 100.0
     if charge.get("currency", "eur").lower() != "eur":
-        amt *= C.USD_TO_EUR  # rough
+        amt *= C.USD_TO_EUR
     return max(amt * (1 - C.STRIPE_FEE_RATE) - C.STRIPE_FIXED_FEE_EUR, 0)
